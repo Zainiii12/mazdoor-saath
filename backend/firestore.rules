@@ -1,0 +1,119 @@
+// Firestore security rules for Mazdoor Sathi.
+//
+// Summary:
+//   users          — public read (profiles power matching); writes by owner only
+//   jobs           — public read; create by any signed-in user as themselves;
+//                    updates/deletes by the job owner (deletes: drafts only,
+//                    also enforced in the API)
+//   applications   — readable by signed-in users; created by the job owner as
+//                    an invitation; updates by either party (respond/withdraw)
+//   progressLogs   — readable/writable by the job owner or assigned workers;
+//                    review (approve/flag) by the owner only
+//   wageLedger     — readable by the job owner or assigned workers;
+//                    writes by the owner only
+//   ratings        — public read; created by the rater only; immutable
+//   notifications  — readable/updatable by the recipient only
+//   deviceTokens   — readable/writable by the token owner only
+//
+// NOTE: the Express backend uses the Admin SDK, which bypasses these rules.
+// They protect direct client (Flutter) access to Firestore.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isUser(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function jobOf(jobId) {
+      return get(/databases/$(database)/documents/jobs/$(jobId)).data;
+    }
+
+    function isJobOwner(jobId) {
+      return signedIn() && jobOf(jobId).builderId == request.auth.uid;
+    }
+
+    function isJobWorker(jobId) {
+      return signedIn() && request.auth.uid in jobOf(jobId).assignedTeamIds;
+    }
+
+    function isJobParty(jobId) {
+      return isJobOwner(jobId) || isJobWorker(jobId);
+    }
+
+    // --- Users ---------------------------------------------------------------
+    match /users/{uid} {
+      allow read: if true;
+      allow create, update: if isUser(uid);
+      allow delete: if false;
+    }
+
+    // --- Device tokens -------------------------------------------------------
+    match /deviceTokens/{tokenId} {
+      allow read: if signedIn() && resource.data.userId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // --- Jobs ----------------------------------------------------------------
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.builderId == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.builderId == request.auth.uid;
+      allow delete: if signedIn()
+        && resource.data.builderId == request.auth.uid
+        && resource.data.status == 'draft';
+    }
+
+    // --- Applications ----------------------------------------------------------
+    match /applications/{appId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.builderId == request.auth.uid
+        && request.resource.data.status == 'invited';
+      allow update: if signedIn()
+        && (request.auth.uid == resource.data.builderId
+            || request.auth.uid == resource.data.mazdoorId);
+      allow delete: if false;
+    }
+
+    // --- Progress logs ---------------------------------------------------------
+    match /progressLogs/{logId} {
+      allow read: if isJobParty(resource.data.jobId);
+      allow create: if isJobParty(request.resource.data.jobId);
+      allow update: if isJobOwner(resource.data.jobId);
+      allow delete: if false;
+    }
+
+    // --- Wage ledger -----------------------------------------------------------
+    match /wageLedger/{entryId} {
+      allow read: if isJobParty(resource.data.jobId);
+      allow create: if isJobOwner(request.resource.data.jobId);
+      allow update: if isJobOwner(resource.data.jobId);
+      allow delete: if false;
+    }
+
+    // --- Ratings ---------------------------------------------------------------
+    match /ratings/{ratingId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.raterId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // --- Notifications ---------------------------------------------------------
+    match /notifications/{notifId} {
+      allow read: if isUser(resource.data.userId);
+      allow create: if signedIn();
+      allow update, delete: if isUser(resource.data.userId);
+    }
+  }
+}

@@ -1,0 +1,45 @@
+name: mazdoor_sathi
+description: >-
+  Mazdoor Sathi — a skill-based team hiring and progress-tracking platform
+  connecting builders/homeowners with construction laborers in Pakistan.
+  Final Year Project, Department of Computer Science, University of Gujrat.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.4.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.5.0
+  firebase_messaging: ^15.1.5
+  firebase_storage: ^12.3.7
+
+  # Maps & location (OpenStreetMap via flutter_map)
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  geolocator: ^13.0.2
+
+  # Urdu speech-to-text, camera, networking, state
+  speech_to_text: ^7.0.0
+  image_picker: ^1.1.2
+  http: ^1.2.2
+  provider: ^6.1.2
+  intl: ^0.20.3
+  uuid: ^4.5.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

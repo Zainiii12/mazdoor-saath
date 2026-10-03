@@ -1,0 +1,29 @@
+{
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "firebase-admin": "^12.3.1",
+    "morgan": "^1.10.0"
+  },
+  "description": "Backend API for Mazdoor Sathi \u2014 a platform connecting builders/homeowners with construction laborers (mazdoors) in Pakistan.",
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "UNLICENSED",
+  "main": "src/index.js",
+  "name": "mazdoor-sathi-backend",
+  "private": true,
+  "scripts": {
+    "dev": "node --watch src/index.js",
+    "seed": "node scripts/seed.js",
+    "start": "node src/index.js",
+    "test": "FIRESTORE_FAKE=true ALLOW_TEST_AUTH=true node --test tests/api.test.js",
+    "test:emulator": "node --test tests/api.test.js"
+  },
+  "type": "module",
+  "version": "1.0.0",
+  "devDependencies": {
+    "supertest": "^7.3.0"
+  }
+}

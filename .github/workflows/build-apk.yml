@@ -1,0 +1,55 @@
+name: Build Mazdoor Sathi APK
+
+# Builds a debug APK of the Flutter app and uploads it as an artifact.
+# Trigger: manually from the Actions tab ("Run workflow"), or on every push.
+#
+# The APK is built with API_BASE_URL pointing at the production backend:
+# https://mazdoor-sathi.vercel.app
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'app/**'
+      - '.github/workflows/build-apk.yml'
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.47.5'
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze
+
+      - name: Build debug APK
+        run: >
+          flutter build apk --debug
+          --dart-define=API_BASE_URL=https://mazdoor-sathi.vercel.app
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: mazdoor-sathi-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 30
